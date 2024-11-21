@@ -1,10 +1,24 @@
 import express from "express";
+import session from "express-session";
+
 
 const host = "0.0.0.0";
 const porta = 3000;
 const app = express();
 
+app.use(session({
+    secret: 'M1nh4Chav3S3cr3t4',
+    resave: false,
+    saveUninitialized: true,
+    cookie: {
+        secure: false,
+        httpOnly: true,
+        maxAge: 1000 * 60 * 30 //minutos para excluir os dados de login
+    }
+}));
+
 app.use(express.urlencoded({ extended: true }));
+app.use(express.static('./pages/public'));//deixar visível para o usuário o conteúdo da pasta apontada
 
 var listaAlunos = [];
 
@@ -177,6 +191,39 @@ function cadastrarAluno(req, resp) {
     resp.end();
 }
 
+function autenticarUsuario(req, resp){
+    const usuario = req.body.usuario;
+    const senha = req.body.senha;
+
+    if(usuario === 'adimn' && senha === '123'){
+        resp.redirect('/formulario')
+    }
+    else
+    {
+        resp.write(`<html>
+                        <head>
+                            <meta charset="utf-8">
+                            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+                        </head>
+                        <body>
+                            <div class="alert alert-danger role="alert">
+                                Usuário ou senha inválidos!
+                            </div>
+                            <div>
+                                <a href="/login.html" class="btn btn-primary">Tentar novamente</a> 
+                            </div>
+                        </body>
+                        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+                    </html>
+                `);
+    }
+}
+app.get('/login', (req, resp) => {
+    resp.redirect('/login.html');
+});
+
+app.post('/login', autenticarUsuario);
+
 app.get('/formulario', apresentaFormulario);
 
 app.post('/formulario', cadastrarAluno);
@@ -184,3 +231,5 @@ app.post('/formulario', cadastrarAluno);
 app.listen(porta, host, () => {
     console.log("Servidor iniciado http://" + host + ":" + porta);
 });
+
+//instalar o pacote express-session para criar sessões para o login
