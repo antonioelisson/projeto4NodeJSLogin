@@ -1,6 +1,6 @@
 import express from "express";
 import session from "express-session";
-
+import cookieParser from "cookie-parser";
 
 const host = "0.0.0.0";
 const porta = 3000;
@@ -17,6 +17,7 @@ app.use(session({
     }
 }));
 
+app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('./pages/public'));//deixar visível para o usuário o conteúdo da pasta apontada
 
@@ -195,11 +196,12 @@ function autenticarUsuario(req, resp){
     const usuario = req.body.usuario;
     const senha = req.body.senha;
 
-    if(usuario === 'adimn' && senha === '123'){
+    if(usuario === 'admin' && senha === '123'){
+        req.session.usuarioLogado = true;
+        resp.cookie('dataHoraUltimoAcesso', new Date().toLocaleDateString), {maxAge: }
         resp.redirect('/formulario')
     }
-    else
-    {
+    else{
         resp.write(`<html>
                         <head>
                             <meta charset="utf-8">
@@ -218,18 +220,30 @@ function autenticarUsuario(req, resp){
                 `);
     }
 }
+
+//midleware de segurança
+function verificarAutenticacao(req, resp, next){
+    if(req.session.usuarioLogado){
+        next();//permita acessar os recursos solicitados
+    }
+}
+
+
+
+
 app.get('/login', (req, resp) => {
     resp.redirect('/login.html');
 });
 
 app.post('/login', autenticarUsuario);
 
-app.get('/formulario', apresentaFormulario);
+app.get('/formulario', verificarAutenticacao, apresentaFormulario);
 
-app.post('/formulario', cadastrarAluno);
+app.post('/formulario', verificarAutenticacao, cadastrarAluno);
 
 app.listen(porta, host, () => {
     console.log("Servidor iniciado http://" + host + ":" + porta);
 });
 
 //instalar o pacote express-session para criar sessões para o login
+//instalar o pacote cookie-parser
